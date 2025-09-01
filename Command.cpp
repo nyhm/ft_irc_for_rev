@@ -6,7 +6,7 @@
 /*   By: hnagashi <hnagashi@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/02 00:30:30 by hnagashi          #+#    #+#             */
-/*   Updated: 2025/09/02 05:49:30 by hnagashi         ###   ########.fr       */
+/*   Updated: 2025/09/02 07:49:31 by hnagashi         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -121,9 +121,11 @@ void handleJoin(Client &client, const Message &msg)
     }
     sendNumeric(client, 353, client.nickname, memberList);
     sendNumeric(client, 366, client.nickname, channelName + " :End of /NAMES list.");
+#ifdef DEBUG
     std::printf("JOIN: %s joined %s (role=%d, members=%zu)\n",
                 client.nickname.c_str(), channelName.c_str(),
                 channel->getRole(client.nickname), channel->getMemberCount());
+#endif
 }
 
 void handleMode(Client &client, const Message &msg)
@@ -304,7 +306,9 @@ void handleMode(Client &client, const Message &msg)
                         setPollout(it->first);
                     }
                 }
+#ifdef DEBUG
                 std::printf("MODE: %s changed modes for %s: %s\n", client.nickname.c_str(), target.c_str(), response.c_str());
+#endif
             }
         }
     }
@@ -363,12 +367,18 @@ void handleKick(Client &client, const Message &msg)
     if (channel->isEmpty())
     {
         channels.erase(channelName);
+#ifdef DEBUG
         std::printf("KICK: %s removed from %s, channel removed (empty)\n",
                     targetNick.c_str(), channelName.c_str());
+#endif
     }
     else
+    {
+#ifdef DEBUG
         std::printf("KICK: %s removed from %s by %s, remaining members=%zu\n",
                     targetNick.c_str(), channelName.c_str(), client.nickname.c_str(), channel->getMemberCount());
+#endif
+    }
 }
 
 void handleInvite(Client &client, const Message &msg)
@@ -430,8 +440,10 @@ void handleInvite(Client &client, const Message &msg)
     std::string inviteMsg = prefix(client) + " INVITE " + targetNick + " :" + channelName + "\r\n";
     Client::clients[targetFd].wbuf += inviteMsg;
     sendNumeric(client, 341, client.nickname, targetNick + " " + channelName);
+#ifdef DEBUG
     std::printf("INVITE: %s invited %s to %s\n",
                 client.nickname.c_str(), targetNick.c_str(), channelName.c_str());
+#endif
 }
 
 void handleTopic(Client &client, const Message &msg)
@@ -494,8 +506,10 @@ void handleTopic(Client &client, const Message &msg)
             setPollout(it->first);
         }
     }
+#ifdef DEBUG
     std::printf("TOPIC: %s set topic for %s: %s\n",
                 client.nickname.c_str(), channelName.c_str(), newTopic.c_str());
+#endif
 }
 
 void handlePrivmsg(Client &client, const Message &msg)
@@ -526,13 +540,17 @@ void handlePrivmsg(Client &client, const Message &msg)
             if (it->first != client.fd && channel->hasMember(it->second.nickname))
             {
                 it->second.wbuf += privmsgMsg;
+#ifdef DEBUG
                 std::printf("PRIVMSG: sending to fd=%d, nickname=%s, wbuf.size=%zu\n",
                             it->first, it->second.nickname.c_str(), it->second.wbuf.size());
+#endif
                 setPollout(it->first);
             }
         }
+#ifdef DEBUG
         std::printf("PRIVMSG: %s sent to channel %s: %s\n",
                     client.nickname.c_str(), target.c_str(), message.c_str());
+#endif
     }
     else
     {
@@ -543,8 +561,10 @@ void handlePrivmsg(Client &client, const Message &msg)
             {
                 std::string privmsgMsg = prefix(client) + " PRIVMSG " + target + " :" + message + "\r\n";
                 it->second.wbuf += privmsgMsg;
+#ifdef DEBUG
                 std::printf("PRIVMSG: sending to fd=%d, nickname=%s, wbuf.size=%zu\n",
                             it->first, it->second.nickname.c_str(), it->second.wbuf.size());
+#endif
                 setPollout(it->first);
                 found = true;
                 break;
@@ -555,8 +575,10 @@ void handlePrivmsg(Client &client, const Message &msg)
             sendNumeric(client, 401, client.nickname.empty() ? "*" : client.nickname, target + " :No such nick/channel");
             return;
         }
+#ifdef DEBUG
         std::printf("PRIVMSG: %s sent to %s: %s\n",
                     client.nickname.c_str(), target.c_str(), message.c_str());
+#endif
     }
 }
 
@@ -602,13 +624,17 @@ void handlePart(Client &client, const Message &msg)
     if (channel->isEmpty())
     {
         removeEmptyChannels();
+#ifdef DEBUG
         std::printf("PART: %s left %s, channel removed (empty)\n",
                     client.nickname.c_str(), channelName.c_str());
+#endif
     }
     else
     {
+#ifdef DEBUG
         std::printf("PART: %s left %s (remaining members=%zu)\n",
                     client.nickname.c_str(), channelName.c_str(),
                     channel->getMemberCount());
+#endif
     }
 }

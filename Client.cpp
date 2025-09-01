@@ -6,7 +6,7 @@
 /*   By: hnagashi <hnagashi@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/08/21 07:18:23 by hnagashi          #+#    #+#             */
-/*   Updated: 2025/09/02 06:55:00 by hnagashi         ###   ########.fr       */
+/*   Updated: 2025/09/02 07:44:44 by hnagashi         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -196,26 +196,35 @@ void handleQuit(Client &client, const Message &msg)
                 if (channel->hasMember(clientIt->second.nickname))
                 {
                     clientIt->second.wbuf += quitMsg;
+#ifdef DEBUG
                     std::printf("QUIT: sending notification to fd=%d, nickname=%s\n",
                                 clientIt->first, clientIt->second.nickname.c_str());
+#endif
                     setPollout(clientIt->first);
                 }
             }
             channel->removeMember(client.nickname);
             channel->invited.erase(client.nickname);
+#ifdef DEBUG
             std::printf("QUIT: %s left %s, remaining members=%zu\n",
                         client.nickname.c_str(), channelName.c_str(), channel->getMemberCount());
+#endif
             if (channel->isEmpty())
             {
                 channels.erase(channelName);
+#ifdef DEBUG
                 std::printf("QUIT: %s removed (empty)\n", channelName.c_str());
+#endif
             }
         }
     }
     close(client.fd);
     Client::clients.erase(client.fd);
+#ifdef DEBUG
     std::printf("QUIT: %s disconnected from %zu channels\n",
+
                 client.nickname.c_str(), channelsToLeave.size());
+#endif
 }
 
 void cleanupClient(int clientFd)
@@ -242,23 +251,31 @@ void cleanupClient(int clientFd)
                 if (clientIt->first != clientFd && channel->hasMember(clientIt->second.nickname))
                 {
                     clientIt->second.wbuf += quitMsg;
+#ifdef DEBUG
                     std::printf("DISCONNECT: sending notification to fd=%d, nickname=%s\n",
                                 clientIt->first, clientIt->second.nickname.c_str());
+#endif
                     setPollout(clientIt->first);
                 }
             }
             channel->removeMember(client.nickname);
             channel->invited.erase(client.nickname);
+#ifdef DEBUG
             std::printf("DISCONNECT: %s left %s, remaining members=%zu\n",
                         client.nickname.c_str(), channelName.c_str(), channel->getMemberCount());
+#endif
             if (channel->isEmpty())
             {
                 channels.erase(channelName);
+#ifdef DEBUG
                 std::printf("DISCONNECT: %s removed (empty)\n", channelName.c_str());
+#endif
             }
         }
     }
+#ifdef DEBUG
     std::printf("DISCONNECT: %s cleaned up from %zu channels\n",
                 client.nickname.c_str(), channelsToLeave.size());
+#endif
     Client::clients.erase(clientFd);
 }

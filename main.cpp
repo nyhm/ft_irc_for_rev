@@ -6,7 +6,7 @@
 /*   By: hnagashi <hnagashi@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/08/21 10:47:23 by hnagashi          #+#    #+#             */
-/*   Updated: 2025/09/02 06:52:11 by hnagashi         ###   ########.fr       */
+/*   Updated: 2025/09/02 08:04:29 by hnagashi         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -24,24 +24,34 @@
 
 static void dispatchCommand(Client &client, const Message &msg)
 {
+#ifdef DEBUG
     std::printf("DISPATCH: cmd=%s, registered=%d, nickname='%s', passOk=%d, username='%s'\n",
                 msg.cmd.c_str(), client.registered, client.nickname.c_str(), client.passOk, client.username.c_str());
+#endif
     if (requiresRegistration.find(msg.cmd) != requiresRegistration.end() && !client.registered)
     {
+#ifdef DEBUG
         std::printf("SENDING 451: %s requires registration\n", msg.cmd.c_str());
+#endif
         sendNotRegistered(client, msg.cmd);
         return;
     }
     std::map<std::string, Client::CommandHandler>::const_iterator it = commandHandlers.find(msg.cmd);
     if (it != commandHandlers.end())
     {
+#ifdef DEBUG
         std::printf("HANDLING: %s\n", msg.cmd.c_str());
+#endif
         it->second(client, msg);
+#ifdef DEBUG
         std::printf("AFTER HANDLER: wbuf.size=%zu\n", client.wbuf.size());
+#endif
     }
     else
     {
+#ifdef DEBUG
         std::printf("UNKNOWN COMMAND: %s\n", msg.cmd.c_str());
+#endif
         if (client.registered)
             commandHandlers.at("UNKNOWN")(client, msg);
     }
@@ -110,7 +120,7 @@ int main(int argc, char **argv)
 
     if (argc != 3)
     {
-        std::fprintf(stderr, "Usage: %s <port> <pass>\n", argv[0]);
+        std::fprintf(stderr, "Usage: %s <port> <password>\n", argv[0]);
         return 1;
     }
     const int port = std::atoi(argv[1]);
@@ -148,12 +158,11 @@ int main(int argc, char **argv)
         perror("listen");
         return 1;
     }
-
     pfds.reserve(1024);
     pfds.push_back((pollfd){listen_fd, POLLIN, 0});
-
+#ifdef DEBUG
     std::puts("server: listening...");
-
+#endif
     for (;;)
     {
         int n = ::poll(&pfds[0], pfds.size(), -1);
@@ -193,36 +202,12 @@ int main(int argc, char **argv)
                     set_nonblock(cfd);
                     pfds.push_back((pollfd){cfd, POLLIN, 0});
                     Client::clients[cfd] = Client(cfd);
+#ifdef DEBUG
                     std::printf("accept: fd=%d\n", cfd);
+#endif
                 }
                 continue;
             }
-            // if (p.revents & POLLOUT)
-            // {
-            //     Client &cl = Client::clients[p.fd];
-            //     std::printf("POLLOUT: fd=%d, wbuf.size=%zu\n", p.fd, cl.wbuf.size());
-            //     if (!cl.wbuf.empty())
-            //     {
-            //         std::printf("SEND: fd=%d, wbuf.size=%zu\n", p.fd, cl.wbuf.size());
-            //         ssize_t s = ::send(p.fd, cl.wbuf.data(), cl.wbuf.size(), 0);
-            //         if (s <= 0)
-            //         {
-            //             std::printf("close: fd=%d (send=%zd errno=%d)\n", p.fd, s, errno);
-            //             ::close(p.fd);
-            //             Client::clients.erase(p.fd);
-            //             pfds.erase(pfds.begin() + i);
-            //             --i;
-            //             continue;
-            //         }
-            //         cl.wbuf.erase(0, (size_t)s);
-            //         std::printf("SENT: fd=%d, bytes=%zd, remaining=%zu\n", p.fd, s, cl.wbuf.size());
-            //     }
-            //     if (Client::clients.count(p.fd) && Client::clients[p.fd].wbuf.empty())
-            //     {
-            //         pfds[i].events &= ~POLLOUT;
-            //         std::printf("REMOVE POLLOUT: fd=%d\n", p.fd);
-            //     }
-            // }
             if (p.revents & POLLOUT)
             {
                 Client &cl = Client::clients[p.fd];
@@ -233,11 +218,15 @@ int main(int argc, char **argv)
                     {
                         if (errno == EAGAIN || errno == EWOULDBLOCK)
                         {
+#ifdef DEBUG
                             std::printf("SEND would block, keeping POLLOUT\n");
+#endif
                         }
                         else
                         {
+#ifdef DEBUG
                             std::printf("SEND failed: %s\n", strerror(errno));
+#endif
                             ::close(p.fd);
                             Client::clients.erase(p.fd);
                             pfds.erase(pfds.begin() + i);
@@ -246,7 +235,9 @@ int main(int argc, char **argv)
                     }
                     else if (s == 0)
                     {
+#ifdef DEBUG
                         std::printf("SEND returned 0, closing connection\n");
+#endif
                         ::close(p.fd);
                         Client::clients.erase(p.fd);
                         pfds.erase(pfds.begin() + i);
@@ -260,8 +251,10 @@ int main(int argc, char **argv)
                             pfds[i].events &= ~POLLOUT;
                             if (cl.logout)
                             {
+#ifdef DEBUG
                                 std::printf("Closing connection after flush: %s\n",
                                             cl.nickname.c_str());
+#endif
                                 ::close(p.fd);
                                 Client::clients.erase(p.fd);
                                 pfds.erase(pfds.begin() + i);
@@ -278,7 +271,9 @@ int main(int argc, char **argv)
                 ssize_t r = ::recv(p.fd, buf, sizeof(buf), 0);
                 if (r <= 0)
                 {
+#ifdef DEBUG
                     std::printf("close: fd=%d (recv=%zd errno=%d)\n", p.fd, r, errno);
+#endif
                     ::close(p.fd);
                     Client::clients.erase(p.fd);
                     pfds.erase(pfds.begin() + i);
@@ -291,7 +286,9 @@ int main(int argc, char **argv)
 
                 if (line_too_long(cl.rbuf))
                 {
+#ifdef DEBUG
                     std::printf("close: fd=%d (line too long)\n", p.fd);
+#endif
                     ::close(p.fd);
                     Client::clients.erase(p.fd);
                     pfds.erase(pfds.begin() + i);
@@ -305,15 +302,18 @@ int main(int argc, char **argv)
                     Message msg;
                     if (!Parser::parse(line, msg))
                         continue;
-
+#ifdef DEBUG
                     std::printf("CMD=%s ARGC=%zu\n", msg.cmd.c_str(), msg.args.size());
+#endif
                     dispatchCommand(cl, msg);
                 }
 
                 if (!cl.wbuf.empty())
                 {
                     pfds[i].events |= POLLOUT;
+#ifdef DEBUG
                     std::printf("SET POLLOUT: fd=%d, wbuf.size=%zu\n", p.fd, cl.wbuf.size());
+#endif
                 }
             }
         }

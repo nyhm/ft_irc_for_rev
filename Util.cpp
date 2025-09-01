@@ -6,7 +6,7 @@
 /*   By: hnagashi <hnagashi@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/02 00:30:52 by hnagashi          #+#    #+#             */
-/*   Updated: 2025/09/02 07:11:28 by hnagashi         ###   ########.fr       */
+/*   Updated: 2025/09/02 08:00:12 by hnagashi         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -75,7 +75,9 @@ void setPollout(int fd)
         if (pfds[i].fd == fd)
         {
             pfds[i].events |= POLLOUT;
+#ifdef DEBUG
             std::printf("SETPOLLOUT: fd=%d, events=0x%x\n", fd, pfds[i].events);
+#endif
             break;
         }
     }

@@ -6,7 +6,7 @@
 #    By: hnagashi <hnagashi@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/08/06 09:18:03 by hnagashi          #+#    #+#              #
-#    Updated: 2025/08/21 10:38:25 by hnagashi         ###   ########.fr        #
+#    Updated: 2025/09/02 07:42:30 by hnagashi         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -23,6 +23,8 @@ $(NAME): $(OBJ)
 	$(CXX) $(CXXFLAGS) -o $@ $(OBJ)
 %.o: %.cpp
 	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -c $< -o $@
+debug: CXXFLAGS += -DDEBUG -g
+debug: re
 clean:
 	rm -f $(OBJ)
 fclean: clean
