@@ -6,7 +6,7 @@
 #    By: hnagashi <hnagashi@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/08/06 09:18:03 by hnagashi          #+#    #+#              #
-#    Updated: 2025/09/02 07:42:30 by hnagashi         ###   ########.fr        #
+#    Updated: 2025/09/02 16:26:47 by hnagashi         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -15,7 +15,7 @@ CXX := c++
 CXXFLAGS := -std=c++98 -Wall -Wextra -Werror
 CPPFLAGS := -I.
 
-SRC := main.cpp Parser.cpp Client.cpp Util.cpp Channel.cpp Command.cpp Server.cpp
+SRC := srcs/main.cpp srcs/Parser.cpp srcs/Client.cpp srcs/Util.cpp srcs/Channel.cpp srcs/Command.cpp srcs/Server.cpp
 OBJ := $(SRC:.cpp=.o)
 
 all: $(NAME)
@@ -30,4 +30,4 @@ clean:
 fclean: clean
 	rm -f $(NAME)
 re: fclean all
-.PHONY: all clean fclean re
+.PHONY: all clean fclean re debug
